@@ -5,10 +5,11 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"os"
 	"sort"
 	"strconv"
 
-	"github.com/bmatcuk/doublestar/v3"
+	"github.com/bmatcuk/doublestar/v4"
 	"github.com/pterm/pterm"
 )
 
@@ -42,11 +43,12 @@ func printRanking(records []record) error {
 }
 
 func findGoFiles(path string) ([]string, error) {
-	goFles, err := doublestar.Glob(path + "/**/*.go")
+	fsys := os.DirFS(path)
+	goFiles, err := doublestar.Glob(fsys, "**/*.go", doublestar.WithNoFollow())
 	if err != nil {
 		return nil, err
 	}
-	return goFles, nil
+	return goFiles, nil
 }
 
 func isSubjectOfDeclaration(id *ast.Ident) bool {
@@ -59,9 +61,9 @@ func isSubjectOfDeclaration(id *ast.Ident) bool {
 	return false
 }
 
-func findGlobalVariables(variables []string, file string) ([]string, error) {
+func findGlobalVariables(dir, file string, variables []string) ([]string, error) {
 	fset := token.NewFileSet()
-	f, err := parser.ParseFile(fset, file, nil, 0)
+	f, err := parser.ParseFile(fset, dir+"/"+file, nil, 0)
 	if err != nil {
 		return variables, err
 	}
@@ -82,10 +84,10 @@ func findGlobalVariables(variables []string, file string) ([]string, error) {
 	return variables, nil
 }
 
-func getCount(file, variable string) (int, error) {
+func getCount(dir, file, variable string) (int, error) {
 	fset := token.NewFileSet()
 
-	f, err := parser.ParseFile(fset, file, nil, 0)
+	f, err := parser.ParseFile(fset, dir+"/"+file, nil, 0)
 	if err != nil {
 		return 0, err
 	}
@@ -130,7 +132,7 @@ func main() {
 
 	variables := []string{}
 	for _, file := range files {
-		variables, err = findGlobalVariables(variables, file)
+		variables, err = findGlobalVariables(*dir, file, variables)
 		if err != nil {
 			panic(err)
 		}
@@ -139,7 +141,7 @@ func main() {
 	for _, v := range variables {
 		var count int
 		for _, file := range files {
-			c, err := getCount(file, v)
+			c, err := getCount(*dir, file, v)
 			if err != nil {
 				panic(err)
 			}
