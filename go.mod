@@ -3,7 +3,7 @@ module github.com/ohkinozomu/go-global-var-finder
 go 1.19
 
 require (
-	github.com/bmatcuk/doublestar/v4 v4.6.0
+	github.com/bmatcuk/doublestar/v4 v4.7.1
 	github.com/pterm/pterm v0.12.62
 )
 
